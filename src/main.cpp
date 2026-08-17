@@ -11,9 +11,23 @@
 
 #include <Windows.h>
 
+#include "SingleInstance.hpp"
+
+using orange::SingleInstance;
+
+namespace {
+    constexpr wchar_t MUTEX_NAME[] = L"Local\\visfacto";
+}
+
 int WINAPI wWinMain(HINSTANCE const hInstance, HINSTANCE const, PWSTR const pCmdLine, int const nCmdShow) {
     UNREFERENCED_PARAMETER(hInstance);
     UNREFERENCED_PARAMETER(pCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
+
+    auto single_instance = SingleInstance(MUTEX_NAME);
+    if (!single_instance.is_first()) {
+        return 0;
+    }
+
     return 0;
 }
