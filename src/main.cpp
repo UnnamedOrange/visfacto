@@ -12,15 +12,18 @@
 #include <Windows.h>
 
 #include "SingleInstance.hpp"
+#include "TrayWindow.hpp"
+#include "Window.hpp"
 
 using orange::SingleInstance;
+using orange::TrayWindow;
+using orange::Window;
 
 namespace {
     constexpr wchar_t MUTEX_NAME[] = L"Local\\visfacto";
 }
 
 int WINAPI wWinMain(HINSTANCE const hInstance, HINSTANCE const, PWSTR const pCmdLine, int const nCmdShow) {
-    UNREFERENCED_PARAMETER(hInstance);
     UNREFERENCED_PARAMETER(pCmdLine);
     UNREFERENCED_PARAMETER(nCmdShow);
 
@@ -29,5 +32,10 @@ int WINAPI wWinMain(HINSTANCE const hInstance, HINSTANCE const, PWSTR const pCmd
         return 0;
     }
 
-    return 0;
+    auto window = TrayWindow(hInstance);
+    if (!window.create_window_and_tray_icon()) {
+        return 1;
+    }
+
+    return Window::message_loop();
 }
