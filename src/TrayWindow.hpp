@@ -14,6 +14,7 @@
 #include <Windows.h>
 
 #include "Autostart.hpp"
+#include "Protection.hpp"
 #include "Window.hpp"
 
 namespace orange {
@@ -32,11 +33,18 @@ namespace orange {
         static constexpr UINT WM_TRAYICON = WM_APP + 1;
         static constexpr UINT ID_TRAYICON = 1;
 
+        static constexpr UINT_PTR ID_TIMER = 1;
+        static constexpr UINT TIMER_INTERVAL = 2000;
+
     private:
         HINSTANCE const instance_handle;
 
     private:
+        Protection protection;
         Autostart autostart{L"visfacto"};
+
+    private:
+        bool is_enabled = false;
 
     private:
         UINT taskbar_created_message{};
@@ -52,6 +60,8 @@ namespace orange {
 
     private:
         void on_tray_icon(UINT mouse_message);
+        void on_timer();
+        void on_settings_change();
         void on_destroy();
 
     private:

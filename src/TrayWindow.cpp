@@ -24,6 +24,7 @@
 
 using Self = orange::TrayWindow;
 
+#define HANDLE_WM_SETTINGCHANGE(hWnd, wParam, lParam, fn) ((fn)((hWnd), (UINT)(wParam), (LPARAM)(lParam)), 0L)
 #define HANDLE_WM_TRAYICON(hWnd, wParam, lParam, fn) ((fn)((hWnd), (UINT)(wParam), (UINT)(LOWORD(lParam))), 0L)
 
 Self::TrayWindow(HINSTANCE const _instance_handle)      //
@@ -42,6 +43,12 @@ LRESULT Self::window_proc(HWND const hWnd, UINT const uMsg, WPARAM const wParam,
         HANDLE_MSG(hWnd, WM_TRAYICON, [this](HWND const, UINT const, UINT const mouse_message) { //
             this->on_tray_icon(mouse_message);
         });
+        HANDLE_MSG(hWnd, WM_TIMER, [this](HWND const, UINT_PTR const) { //
+            this->on_timer();
+        });
+        HANDLE_MSG(hWnd, WM_SETTINGCHANGE, [this](HWND const, UINT const, LPARAM const) { //
+            this->on_settings_change();
+        });
         HANDLE_MSG(hWnd, WM_DESTROY, [this](HWND const) { //
             this->on_destroy();
         });
@@ -57,6 +64,11 @@ bool Self::create_window_and_tray_icon() {
     this->taskbar_created_message = RegisterWindowMessageW(L"TaskbarCreated");
     this->add_tray_icon();
 
+    this->protection.capture_baseline();
+    this->is_enabled = true;
+
+    SetTimer(this->Super::handle(), Self::ID_TIMER, Self::TIMER_INTERVAL, nullptr);
+
     return true;
 }
 
@@ -70,6 +82,16 @@ void Self::on_tray_icon(UINT const mouse_message) {
     default: {
         break;
     }
+    }
+}
+void Self::on_timer() {
+    if (this->is_enabled) {
+        this->protection.check_and_restore();
+    }
+}
+void Self::on_settings_change() {
+    if (this->is_enabled) {
+        this->protection.check_and_restore();
     }
 }
 void Self::on_destroy() {
@@ -111,6 +133,14 @@ UINT Self::track_popup_menu() {
     assert(sub_menu_handle != nullptr);
 
     // Check the items with the states.
+    CheckMenuItem(               //
+        sub_menu_handle,         //
+        ID_TRAY_ENABLE,          //
+        MF_BYCOMMAND |           //
+            (this->is_enabled    //
+                 ? MF_CHECKED    //
+                 : MF_UNCHECKED) //
+    );
     CheckMenuItem(                            //
         sub_menu_handle,                      //
         ID_TRAY_AUTOSTART,                    //
@@ -151,6 +181,14 @@ void Self::on_tray_menu_item(UINT const cmd) {
             nullptr,                                      //
             SW_SHOWNORMAL                                 //
         );
+        break;
+    }
+    case ID_TRAY_ENABLE: {
+        this->is_enabled = !this->is_enabled;
+        if (this->is_enabled) {
+            this->protection.capture_baseline();
+            this->protection.check_and_restore();
+        }
         break;
     }
     case ID_TRAY_AUTOSTART: {
