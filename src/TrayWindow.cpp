@@ -110,6 +110,16 @@ UINT Self::track_popup_menu() {
     auto const sub_menu_handle = GetSubMenu(menu_handle.get(), 0);
     assert(sub_menu_handle != nullptr);
 
+    // Check the items with the states.
+    CheckMenuItem(                            //
+        sub_menu_handle,                      //
+        ID_TRAY_AUTOSTART,                    //
+        MF_BYCOMMAND |                        //
+            (this->autostart.get_is_enabled() //
+                 ? MF_CHECKED                 //
+                 : MF_UNCHECKED)              //
+    );
+
     // Popup menu and track.
     POINT pt;
     GetCursorPos(&pt);
@@ -141,6 +151,10 @@ void Self::on_tray_menu_item(UINT const cmd) {
             nullptr,                                      //
             SW_SHOWNORMAL                                 //
         );
+        break;
+    }
+    case ID_TRAY_AUTOSTART: {
+        this->autostart.set_is_enabled(!this->autostart.get_is_enabled());
         break;
     }
     default: {

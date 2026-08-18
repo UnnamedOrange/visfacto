@@ -13,6 +13,7 @@
 
 #include <Windows.h>
 
+#include "Autostart.hpp"
 #include "Window.hpp"
 
 namespace orange {
@@ -33,6 +34,9 @@ namespace orange {
 
     private:
         HINSTANCE const instance_handle;
+
+    private:
+        Autostart autostart{L"visfacto"};
 
     private:
         UINT taskbar_created_message{};
