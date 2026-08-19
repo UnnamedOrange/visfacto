@@ -1,0 +1,72 @@
+name: CI
+
+on:
+  pull_request:
+  workflow_dispatch:
+  release:
+    types: [published]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    name: Build (${{ matrix.arch }})
+    runs-on: windows-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+    permissions:
+      contents: read
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Set up CMake
+        uses: lukka/get-cmake@latest
+
+      - name: Configure
+        run: cmake --preset msvc-${{ matrix.arch }}
+
+      - name: Build Release
+        run: cmake --build --preset msvc-${{ matrix.arch }}-release
+
+      - name: Prepare release files
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path dist -Force | Out-Null
+          Copy-Item "build/msvc-${{ matrix.arch }}/Release/visfacto.exe" "dist/visfacto-${{ matrix.arch }}.exe"
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: visfacto-${{ matrix.arch }}
+          path: dist/
+          if-no-files-found: error
+
+  release:
+    name: Attach to Release
+    if: github.event_name == 'release'
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v7
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v7
+        with:
+          pattern: visfacto-*
+          merge-multiple: true
+          path: dist
+
+      - name: Upload files to Release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "${{ github.event.release.tag_name }}" dist/* --clobber
