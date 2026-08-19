@@ -28,16 +28,16 @@ Ready-to-run builds are published on the [Releases](https://github.com/UnnamedOr
 ```powershell
 git clone https://github.com/UnnamedOrange/visfacto.git
 cd visfacto
-cmake --preset windows-msvc
-cmake --build --preset windows-msvc-release
+cmake --preset msvc-x64
+cmake --build --preset msvc-x64-release
 ```
 
-The exe is written to `build/windows-msvc/Release/visfacto.exe`.
+The exe is written to `build/msvc-x64/Release/visfacto.exe`.
 
-For a debug build, use the `windows-msvc-debug` preset instead:
+For a debug build, use the `msvc-x64-debug` preset instead:
 
 ```powershell
-cmake --build --preset windows-msvc-debug
+cmake --build --preset msvc-x64-debug
 ```
 
 ## Usage
